@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Всё под рукой</title>
+    <meta name="author" content="@six7_hub">
+    <meta name="creator" content="Пиксель и строчка">
+    <meta name="publisher" content="t.me/six7_hub">
+    <meta name="telegram:channel" content="@six7_hub">
+    <meta name="description" content="Планер: привычки, задачи, финансы. Проект «Пиксель и строчка»">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #FDFBF7;
+            --card: #FFFFFF;
+            --text: #1e293b;
+            --muted: #94a3b8;
+            --border: #e2e8f0;
+            --primary: #FCA5A5;
+            --primary-dark: #F87171;
+            --secondary: #93C5FD;
+            --secondary-dark: #60A5FA;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --nav-height: 64px;
+        }
+        [data-mode="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #334155;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        [data-theme="coral"] { --primary: #FCA5A5; --primary-dark: #F87171; --secondary: #93C5FD; --secondary-dark: #60A5FA; }
+        [data-theme="mint"] { --primary: #6EE7B7; --primary-dark: #34d399; --secondary: #FCD34D; --secondary-dark: #fbbf24; }
+        [data-theme="lavender"] { --primary: #C4B5FD; --primary-dark: #a78bfa; --secondary: #F9A8D4; --secondary-dark: #ec4899; }
+        [data-theme="sky"] { --primary: #7DD3FC; --primary-dark: #38bdf8; --secondary: #FCA5A5; --secondary-dark: #F87171; }
+
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+            margin: 0;
+            padding: 0;
+            padding-bottom: calc(var(--nav-height) + 20px);
+        }
+        .card { background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 16px; transition: all 0.3s; }
+        .text-muted { color: var(--muted); }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 9999px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; transition: all 0.25s; white-space: nowrap; background: transparent; color: var(--text); min-height: 40px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--secondary); color: #fff; }
+        .btn-secondary:hover { background: var(--secondary-dark); }
+        .btn-outline { border: 1px solid var(--border); }
+        .btn-outline:hover { background: var(--border); }
+        .inline-input { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--text); font-size: 14px; width: 100%; transition: all 0.2s; }
+        .inline-input:hover { border-color: var(--muted); }
+        .inline-input:focus { outline: none; border-color: var(--secondary); }
+        .inline-input::placeholder { color: var(--muted); }
+        [data-mode="dark"] .inline-input { background: rgba(255,255,255,0.05); border-color: var(--border); color: #fff; }
+        [data-mode="dark"] .inline-input::placeholder { color: #94a3b8; }
+        .habit-checkbox { appearance: none; width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.2s; background: var(--card); position: relative; flex-shrink: 0; }
+        .habit-checkbox:checked { background: var(--primary); border-color: var(--primary-dark); }
+        .habit-checkbox:checked::after { content: ""; position: absolute; left: 7px; top: 2px; width: 6px; height: 12px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .habit-checkbox:disabled { opacity: 0.25; cursor: not-allowed; }
+        .habit-checkbox.small { width: 16px !important; height: 16px !important; }
+        .habit-checkbox.small:checked::after { left: 5px !important; top: 1px !important; width: 4px !important; height: 8px !important; }
+
+        .tab-btn { padding: 10px 18px; border-radius: 14px 14px 0 0; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--muted); transition: all 0.25s; white-space: nowrap; }
+        .tab-btn.active { background: var(--card); color: var(--text); border-color: var(--border); border-bottom: none; }
+        .tab-btn:not(.active):hover { color: var(--text); }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .mobile-nav-inner { display: flex; height: 100%; align-items: center; justify-content: space-around; }
+        .mobile-nav-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            background: none; border: none; cursor: pointer; color: var(--muted);
+            font-size: 9px; font-weight: 600; padding: 4px 8px; min-height: 44px; min-width: 60px; transition: all 0.2s;
+        }
+        .mobile-nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+        .mobile-nav-btn.active { color: var(--primary-dark); }
+        .mobile-nav-btn.active .nav-icon { transform: scale(1.1); }
+
+        .fab {
+            display: none; position: fixed; bottom: 76px; right: 16px; width: 52px; height: 52px;
+            border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 28px;
+            cursor: pointer; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.25s; align-items: center; justify-content: center;
+        }
+        .fab:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .fab:active { transform: scale(0.95); }
+
+        .mobile-habit-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow); }
+        .mobile-day-btn {
+            width: 36px; height: 36px; border-radius: 50%; font-size: 11px; font-weight: 700; cursor: pointer;
+            border: 2px solid var(--border); background: var(--card); color: var(--muted);
+            display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .mobile-day-btn.active { background: var(--primary); border-color: var(--primary-dark); color: #fff; }
+
+        .mobile-task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.3s; }
+        .mobile-task-card.pinned { border-left: 3px solid var(--primary); }
+        .mobile-task-details { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .mobile-task-card.expanded .mobile-task-details { display: block; }
+
+        .mobile-subtab {
+            padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--muted);
+            min-height: 36px; white-space: nowrap; flex-shrink: 0;
+        }
+        .mobile-subtab.active { background: var(--primary); border-color: var(--primary-dark); color: #fff; }
+        .mobile-subtabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+
+        .mobile-finance-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .mobile-finance-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; box-shadow: var(--shadow); }
+        .mobile-finance-card .inline-input { min-width: 0; width: 100%; }
+
+        .progress-bar { height: 8px; background: var(--border); border-radius: 9999px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 9999px; transition: width 0.4s ease; }
+        .chart-container { position: relative; height: 180px; width: 100%; }
+        .toast { position: fixed; bottom: 90px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 4000; animation: slideUp 0.3s ease-out; max-width: 320px; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .goal-check { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border); background: var(--card); display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 11px; color: #fff; flex-shrink: 0; }
+        .goal-check.completed { background: #34d399; border-color: #10b981; }
+        .subtask-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
+        .subgoal-item { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .habit-color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .nowrap { white-space: nowrap; }
+        .input-with-delete { padding-right: 30px; }
+        .day-selector-btn { width: 36px; height: 36px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; border: 2px solid var(--border); background: var(--card); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; user-select: none; position: relative; }
+        .day-selector-btn:hover { border-color: var(--primary); color: var(--primary-dark); transform: translateY(-1px); }
+        .day-selector-btn:active { transform: scale(0.92); }
+        .day-selector-btn.active { background: var(--primary); border-color: var(--primary-dark); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .mobile-habit-calendar { margin-top: 8px; overflow: hidden; }
+        .calendar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+        .calendar-scroll::-webkit-scrollbar { height: 4px; }
+        .calendar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+        .calendar-days { display: flex; gap: 4px; min-width: max-content; padding: 0 4px; }
+        .calendar-day { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 32px; }
+        .calendar-day span { font-size: 10px; color: var(--muted); font-weight: 600; }
+
+        body.force-desktop .mobile-nav,
+        body.force-desktop .fab,
+        body.force-desktop .mobile-tasks-view,
+        body.force-desktop .mobile-habit-section,
+        body.force-desktop .mobile-finance-section,
+        body.force-desktop .mobile-subtabs { display: none !important; }
+        body.force-desktop .desktop-nav { display: flex !important; }
+        body.force-desktop .desktop-only { display: block !important; }
+        body.force-mobile .desktop-nav,
+        body.force-mobile .desktop-only { display: none !important; }
+        body.force-mobile .mobile-nav { display: block !important; }
+        body.force-mobile .mobile-subtabs { display: flex !important; }
+        body.force-mobile .mobile-habit-section.active,
+        body.force-mobile .mobile-finance-section.active { display: block !important; }
+        body.force-mobile .mobile-tasks-view { display: block !important; }
+
+        @media print {
+            .no-print, .mobile-nav, .fab, .mobile-subtabs, .mobile-tasks-view,
+            .mobile-habit-section, .mobile-finance-section { display: none !important; }
+            .desktop-only { display: block !important; }
+            body { background: #fff; padding-bottom: 0; }
+            .card { box-shadow: none; }
+        }
+        @media (max-width: 768px) {
+            body { padding-bottom: calc(var(--nav-height) + 80px); }
+            .desktop-nav { display: none !important; }
+            .mobile-nav { display: block; }
+            .fab { display: flex; }
+            .desktop-only { display: none !important; }
+            .mobile-tasks-view { display: block; }
+            .mobile-habit-section, .mobile-finance-section { display: none !important; }
+            .mobile-habit-section.active, .mobile-finance-section.active { display: block !important; }
+            .btn { min-height: 44px; padding: 10px 20px; }
+            .inline-input { min-height: 44px; font-size: 16px; }
+            .habit-checkbox { width: 26px; height: 26px; }
+            .card { border-radius: 12px; padding: 12px !important; margin-bottom: 8px; }
+            .mobile-finance-grid { grid-template-columns: 1fr; gap: 8px; }
+            #annualSection .grid { grid-template-columns: 1fr !important; gap: 8px; }
+        }
+    </style>
+</head>
+<body data-mode="light" data-theme="coral" class="min-h-screen flex justify-center py-3 px-2 sm:px-4">
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<nav class="mobile-nav no-print">
+    <div class="mobile-nav-inner">
+        <button class="mobile-nav-btn active" data-mobile-tab="tab1"><span class="nav-icon">📅</span><span>Привычки</span></button>
+        <button class="mobile-nav-btn" data-mobile-tab="tab2"><span class="nav-icon">📝</span><span>Задачи</span></button>
+        <button class="mobile-nav-btn" data-mobile-tab="tab3"><span class="nav-icon">📊</span><span>Финансы</span></button>
+    </div>
+</nav>
+
+<button id="fabBtn" class="fab no-print" title="Добавить"><span>+</span></button>
+
+<div class="w-full max-w-7xl rounded-3xl overflow-hidden border" style="border-color:var(--border);background:var(--bg);">
+    <header class="no-print px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2 border-b" style="border-color:var(--border);background:var(--card);">
+        <div>
+            <h1 class="text-lg font-bold">Всё под рукой</h1>
+            <p class="text-xs text-muted">от Пиксель и строчка</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button id="themeBtn" class="btn btn-outline text-sm" title="Сменить тему">🎨</button>
+            <button id="darkModeBtn" class="btn btn-outline text-sm" title="Ночной режим">🌙</button>
+            <button id="exportBtn" class="btn btn-outline text-sm" title="Экспорт">💾</button>
+            <button id="importBtn" class="btn btn-outline text-sm" title="Импорт">📥</button>
+            <button id="resetBtn" class="btn btn-outline text-sm" title="Сброс" style="color:var(--primary-dark);">🔄</button>
+            <button id="tgButton" class="btn btn-secondary text-sm">📱 Telegram</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+    </header>
+
+    <nav class="desktop-nav no-print px-4 sm:px-6 pt-3 pb-0 flex gap-1 overflow-x-auto border-b" style="border-color:var(--border);">
+        <button class="tab-btn active" data-tab="tab1">📅 Привычки</button>
+        <button class="tab-btn" data-tab="tab2">📝 Задачи</button>
+        <button class="tab-btn" data-tab="tab3">📊 Финансы</button>
+    </nav>
+
+    <main class="p-4 sm:p-6 min-h-[600px]">
+        <!-- ВКЛАДКА 1 -->
+        <div id="tab1" class="tab-panel space-y-5">
+            <div class="mobile-subtabs flex gap-2 overflow-x-auto pb-2" id="mobileHabitSubtabs" style="display:none;">
+                <button class="mobile-subtab active" data-mobile-subtab="habits-goals">🌍 Цели</button>
+                <button class="mobile-subtab" data-mobile-subtab="habits-tracker">📋 Трекер</button>
+                <button class="mobile-subtab" data-mobile-subtab="habits-monthly">📌 Ежемес.</button>
+                <button class="mobile-subtab" data-mobile-subtab="habits-notes">📝 Заметки</button>
+                <button class="mobile-subtab" data-mobile-subtab="habits-analytics">📊 Аналитика</button>
+            </div>
+
+            <section class="card p-5 mobile-habit-section active" id="mobileHabitGoals">
+                <h2 class="text-lg font-bold mb-2">🌍 Цели на год</h2>
+                <div class="space-y-2" id="mobileAnnualGoals"></div>
+            </section>
+            <section class="card p-3 mobile-habit-section" id="mobileHabitTracker">
+                <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                    <h2 class="text-lg font-bold">📋 Трекер привычек</h2>
+                    <input type="month" id="mobileHabitMonth" class="inline-input text-sm" style="width:auto;">
+                </div>
+                <div id="mobileHabitsList"></div>
+            </section>
+            <section class="card p-5 mobile-habit-section" id="mobileHabitMonthly">
+                <h3 class="font-bold mb-2 text-sm">📌 Ежемесячные задачи</h3>
+                <div id="monthlyHabitsContainer"></div>
+            </section>
+            <section class="card p-5 mobile-habit-section" id="mobileHabitNotes">
+                <h3 class="font-bold mb-2 text-sm">📝 Заметки</h3>
+                <textarea id="notesArea" rows="10" class="inline-input" placeholder="Пиши мысли, идеи, итоги..."></textarea>
+            </section>
+            <section class="card p-5 mobile-habit-section" id="mobileHabitAnalytics">
+                <h3 class="font-bold mb-2 text-sm">📊 Аналитика</h3>
+                <div class="chart-container"><canvas id="donutChart"></canvas></div>
+                <div id="habitProgressList" class="mt-3 space-y-2"></div>
+            </section>
+
+            <section class="card p-5 desktop-only" id="annualSection">
+                <h2 class="text-lg font-bold mb-2">🌍 Цели на год</h2>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="annualGoalsContainer">
+                    <div class="p-3 rounded-xl border" style="border-color:var(--border);"><span class="text-xs font-semibold">💰 Финансы</span><div class="mt-1" id="goals-finance"></div><button class="text-xs mt-1 btn btn-outline py-1 px-2" onclick="addSubgoal('finance')">+ Цель</button></div>
+                    <div class="p-3 rounded-xl border" style="border-color:var(--border);"><span class="text-xs font-semibold">📚 Саморазвитие</span><div class="mt-1" id="goals-spirituality"></div><button class="text-xs mt-1 btn btn-outline py-1 px-2" onclick="addSubgoal('spirituality')">+ Цель</button></div>
+                    <div class="p-3 rounded-xl border" style="border-color:var(--border);"><span class="text-xs font-semibold">💼 Карьера</span><div class="mt-1" id="goals-career"></div><button class="text-xs mt-1 btn btn-outline py-1 px-2" onclick="addSubgoal('career')">+ Цель</button></div>
+                    <div class="p-3 rounded-xl border" style="border-color:var(--border);"><span class="text-xs font-semibold">🌿 Здоровье</span><div class="mt-1" id="goals-health"></div><button class="text-xs mt-1 btn btn-outline py-1 px-2" onclick="addSubgoal('health')">+ Цель</button></div>
+                    <div class="p-3 rounded-xl border" style="border-color:var(--border);"><span class="text-xs font-semibold">❤️ Отношения</span><div class="mt-1" id="goals-relationships"></div><button class="text-xs mt-1 btn btn-outline py-1 px-2" onclick="addSubgoal('relationships')">+ Цель</button></div>
+                </div>
+            </section>
+
+            <section class="card p-5 desktop-only" id="habitSection">
+                <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                    <h2 class="text-lg font-bold">📋 Трекер привычек</h2>
+                    <input type="month" id="habitMonth" class="inline-input text-sm" style="width:auto;">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[700px]" id="habitTable">
+                        <thead id="habitTableHead"></thead>
+                        <tbody id="habitTableBody"></tbody>
+                    </table>
+                </div>
+                <button id="addHabitRowBtn" class="btn btn-secondary mt-3 text-sm">+ Добавить привычку</button>
+            </section>
+
+            <div class="grid lg:grid-cols-3 gap-4 desktop-only">
+                <div class="card p-5"><h3 class="font-bold mb-2 text-sm">📌 Ежемесячные задачи</h3><div id="monthlyHabitsContainerDesktop"></div></div>
+                <div class="card p-5"><h3 class="font-bold mb-2 text-sm">📝 Заметки</h3><textarea id="notesAreaDesktop" rows="10" class="inline-input" placeholder="Пиши мысли, идеи, итоги..."></textarea></div>
+                <div class="card p-5"><h3 class="font-bold mb-2 text-sm">📊 Аналитика</h3><div class="chart-container"><canvas id="donutChartDesktop"></canvas></div><div id="habitProgressListDesktop" class="mt-3 space-y-2"></div></div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 2 -->
+        <div id="tab2" class="tab-panel hidden space-y-5">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="card p-3 text-center"><div class="text-xs text-muted">Выполнено</div><div id="tasksDoneKpi" class="text-xl font-bold">0/0</div></div>
+                <div class="card p-3 text-center"><div class="text-xs text-muted">Прогресс</div><div id="progressPercentKpi" class="text-xl font-bold">0%</div></div>
+                <div class="card p-3 text-center"><div class="text-xs text-muted">Дедлайн сегодня</div><div id="todayDeadlineKpi" class="text-xl font-bold">0</div></div>
+                <div class="card p-3 text-center"><div class="text-xs text-muted">Просрочено</div><div id="overdueKpi" class="text-xl font-bold" style="color:var(--primary-dark);">0</div></div>
+            </div>
+            <div class="card p-4"><input type="text" id="taskSearch" placeholder="🔍 Поиск по названию задачи..." class="inline-input"></div>
+
+            <div class="card p-5 overflow-x-auto desktop-only" id="tasksSection">
+                <h2 class="text-lg font-bold mb-2">📋 Мои задачи</h2>
+                <table class="w-full min-w-[750px] text-sm">
+                    <thead class="text-xs text-muted border-b"><tr><th class="text-left p-2">📌</th><th class="text-left p-2">Задача</th><th class="p-2">Срок</th><th class="p-2">Осталось</th><th class="p-2">Приоритет</th><th class="p-2">Статус</th><th class="p-2">Категория</th><th class="p-2">Подзадачи</th><th class="p-2"></th></tr></thead>
+                    <tbody id="tasksTableBody"></tbody>
+                </table>
+                <button id="addTaskRowBtn" class="btn btn-secondary mt-3 text-sm">+ Добавить задачу</button>
+            </div>
+
+            <div class="card p-3 mobile-tasks-view">
+                <h2 class="text-lg font-bold mb-2">📋 Мои задачи</h2>
+                <div id="mobileTasksList"></div>
+            </div>
+
+            <div class="card p-5"><h3 class="font-bold mb-2 text-sm">🗑️ Корзина</h3><div id="trashContainer" class="text-sm text-muted">Пусто</div></div>
+        </div>
+
+        <!-- ВКЛАДКА 3 -->
+        <div id="tab3" class="tab-panel hidden space-y-5">
+            <div class="mobile-subtabs flex gap-2 overflow-x-auto pb-2" id="mobileFinanceSubtabs" style="display:none;">
+                <button class="mobile-subtab active" data-mobile-subtab="finance-budget">💰 Бюджет</button>
+                <button class="mobile-subtab" data-mobile-subtab="finance-transactions">🧾 Транзакции</button>
+                <button class="mobile-subtab" data-mobile-subtab="finance-overview">📊 Обзор</button>
+            </div>
+            <div class="card p-4"><div class="flex flex-wrap items-center gap-2"><span class="text-sm font-semibold">📅 Период:</span><select id="financePeriod" class="inline-input text-sm" style="width:auto;"><option value="month">Текущий месяц</option><option value="year">Весь год</option><option value="all">Всё время</option></select></div></div>
+
+            <div class="card p-3 mobile-finance-section active" id="mobileFinanceBudget">
+                <p class="text-xs text-muted mb-1">Бюджет на месяц</p>
+                <div class="mobile-finance-grid">
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">💵 Доходы <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('income')">+</button></h4><div id="mobileIncomeRows"></div></div>
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">📺 Подписки <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('subscriptions')">+</button></h4><div id="mobileSubscriptionsRows"></div></div>
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">📅 Регулярные <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('regular')">+</button></h4><div id="mobileRegularRows"></div></div>
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">🛒 Траты <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('spending')">+</button></h4><div id="mobileSpendingRows"></div></div>
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">🏦 Накопления <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('savings')">+</button></h4><div id="mobileSavingsRows"></div></div>
+                    <div class="mobile-finance-card"><h4 class="font-bold mb-1 text-xs flex items-center justify-between">💳 Долги <button class="btn btn-outline text-xs py-0 px-1" onclick="addBudgetItem('debts')">+</button></h4><div id="mobileDebtsRows"></div></div>
+                </div>
+            </div>
+
+            <div class="card p-5 mobile-finance-section" id="mobileFinanceTransactions">
+                <h2 class="text-lg font-bold mb-2">🧾 Транзакции</h2>
+                <div class="space-y-2 mb-3 text-sm">
+                    <input type="date" id="transactionDate" class="inline-input">
+                    <input type="text" id="transactionDesc" placeholder="Описание" class="inline-input">
+                    <select id="transactionCategory" class="inline-input"></select>
+                    <select id="transactionSubcategory" class="inline-input"><option value="">Подкатегория...</option></select>
+                    <input type="number" id="transactionAmount" placeholder="Сколько потрачено" class="inline-input">
+                </div>
+                <button id="addTransactionBtn" class="btn btn-secondary text-sm">+ Добавить</button>
+                <div class="mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="text-xs text-muted border-b"><tr><th class="p-2">Дата</th><th class="p-2">Описание</th><th class="p-2">Категория</th><th class="p-2 nowrap">Сумма</th><th class="p-2"></th></tr></thead><tbody id="transactionsTableBodyMobile"></tbody></table></div>
+            </div>
+
+            <div class="card p-5 mobile-finance-section" id="mobileFinanceOverview">
+                <h2 class="text-lg font-bold mb-2">💰 Обзор</h2>
+                <div class="overflow-x-auto"><table class="w-full text-sm" id="financeSummaryTableMobile"><thead class="text-xs text-muted border-b"><tr><th class="text-left p-2">Категория</th><th class="p-2 nowrap">План</th><th class="p-2 nowrap">Факт</th></tr></thead><tbody></tbody></table></div>
+                <div class="chart-container mt-3"><canvas id="budgetBarChartMobile"></canvas></div>
+            </div>
+
+            <div class="card p-5 desktop-only" id="desktopBudgetSection">
+                <p class="text-xs text-muted mb-1">Здесь планируй свой бюджет на месяц</p>
+                <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">💵 Доходы <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('income')">+</button></h4><div id="incomeBudgetRows"></div></div>
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">📺 Подписки <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('subscriptions')">+</button></h4><div id="subscriptionsRows"></div></div>
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">📅 Регулярные <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('regular')">+</button></h4><div id="regularRows"></div></div>
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">🛒 Траты <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('spending')">+</button></h4><div id="spendingRows"></div></div>
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">🏦 Накопления <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('savings')">+</button></h4><div id="savingsRows"></div></div>
+                    <div class="card p-4"><h4 class="font-bold mb-2 text-sm flex items-center justify-between">💳 Долги <button class="btn btn-outline text-xs py-1 px-2" onclick="addBudgetItem('debts')">+</button></h4><div id="debtsRows"></div></div>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-4 desktop-only">
+                <div class="card p-5"><h2 class="text-lg font-bold mb-2">💰 Обзор</h2><div class="overflow-x-auto"><table class="w-full text-sm" id="financeSummaryTable"><thead class="text-xs text-muted border-b"><tr><th class="text-left p-2">Категория</th><th class="p-2 nowrap">Планировал</th><th class="p-2 nowrap">Фактически</th><th class="p-2 nowrap">Ост.</th></tr></thead><tbody></tbody></table></div></div>
+                <div class="card p-5"><h3 class="font-semibold mb-2 text-sm">📊 Планировал vs Фактически</h3><div class="chart-container"><canvas id="budgetBarChart"></canvas></div></div>
+            </div>
+            <div class="card p-5 desktop-only"><h3 class="font-semibold mb-2 text-sm">🧾 Расходы по категориям</h3><div id="expenseLegend" class="space-y-2"></div></div>
+            <div class="card p-5 desktop-only" id="transactionsSection">
+                <h2 class="text-lg font-bold mb-2">🧾 Транзакции</h2>
+                <div class="grid md:grid-cols-5 gap-2 mb-3 text-sm">
+                    <input type="date" id="transactionDateDesktop" class="inline-input">
+                    <input type="text" id="transactionDescDesktop" placeholder="Описание" class="inline-input">
+                    <select id="transactionCategoryDesktop" class="inline-input"></select>
+                    <select id="transactionSubcategoryDesktop" class="inline-input"><option value="">Подкатегория...</option></select>
+                    <input type="number" id="transactionAmountDesktop" placeholder="Сколько потрачено" class="inline-input">
+                </div>
+                <button id="addTransactionBtnDesktop" class="btn btn-secondary text-sm">+ Добавить</button>
+                <div class="mt-3 overflow-x-auto"><table class="w-full text-sm"><thead class="text-xs text-muted border-b"><tr><th class="p-2">Дата</th><th class="p-2">Описание</th><th class="p-2">Категория</th><th class="p-2">Подкатегория</th><th class="p-2 nowrap">Сумма</th><th class="p-2"></th></tr></thead><tbody id="transactionsTableBody"></tbody></table></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+(function() {
+    console.log('%c Всё под рукой ', 'background: #FCA5A5; color: #fff; font-size: 20px; font-weight: bold; padding: 10px; border-radius: 8px;');
+    console.log('%c Автор: @six7_hub · t.me/six7_hub ', 'background: #93C5FD; color: #fff; font-size: 14px; padding: 6px; border-radius: 6px;');
+
+    const STORAGE_KEY = 'six7_hub_data_v2';
+    const SETTINGS_KEY = 'six7_hub_settings_v2';
+    const TG_LINK = 'https://t.me/six7_hub';
+    const THEMES = ['coral', 'mint', 'lavender', 'sky'];
+
+    function getToday() { return new Date().toISOString().split('T')[0]; }
+
+    const DEFAULT_DATA = {
+        annualGoals: { finance: [], spirituality: [], career: [], health: [], relationships: [] },
+        habits: [], monthlyHabits: [], deletedTasks: [], notes: '', tasks: [], transactions: [],
+        currentMonth: getToday().slice(0, 7),
+        budget: { income: [], subscriptions: [], regular: [], spending: [], savings: [], debts: [] }
+    };
+
+    let appData = loadData();
+    let settings = loadSettings();
+    const charts = {};
+    const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    let currentMonth = appData.currentMonth || getToday().slice(0, 7);
+
+    function loadData() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                data.habits.forEach(h => { if (!h.activeDays) h.activeDays = [true,true,true,true,true,true,true]; if (!h.monthlyDays) h.monthlyDays = {}; });
+                data.tasks.forEach(t => { if (!t.subtasks) t.subtasks = []; if (!t.pinned) t.pinned = false; });
+                return data;
+            }
+        } catch(e) {}
+        return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+    function saveData() { appData.currentMonth = currentMonth; localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+    function loadSettings() { try { const saved = localStorage.getItem(SETTINGS_KEY); if (saved) return JSON.parse(saved); } catch(e) {} return { theme: 'coral', dark: false }; }
+    function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+    function fmt(n) { return Number(n).toLocaleString('ru-RU', {maximumFractionDigits:0}); }
+    function isMobile() { return window.innerWidth <= 768; }
+    function showToast(text) { const el = document.getElementById('toast'); el.textContent = text; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 3000); }
+
+    function applyDeviceMode() {
+        document.body.classList.remove('force-desktop', 'force-mobile');
+        if (isMobile()) document.body.classList.add('force-mobile');
+        else document.body.classList.add('force-desktop');
+    }
+    function applyTheme() {
+        document.body.setAttribute('data-mode', settings.dark ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', settings.theme);
+        document.getElementById('darkModeBtn').textContent = settings.dark ? '☀️' : '🌙';
+    }
+
+    document.getElementById('themeBtn').addEventListener('click', () => {
+        const currentIndex = THEMES.indexOf(settings.theme);
+        settings.theme = THEMES[(currentIndex + 1) % THEMES.length];
+        saveSettings(); applyTheme();
+        showToast('Тема: ' + settings.theme);
+    });
+    document.getElementById('darkModeBtn').addEventListener('click', () => {
+        settings.dark = !settings.dark; saveSettings(); applyTheme();
+    });
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'vse_pod_rukoy_backup.json'; a.click();
+        URL.revokeObjectURL(url); showToast('Данные экспортированы');
+    });
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (confirm('Заменить текущие данные импортированными?')) { appData = imported; saveData(); renderAll(); showToast('Данные импортированы'); }
+            } catch (err) { showToast('Ошибка импорта: неверный файл'); }
+        };
+        reader.readAsText(file); e.target.value = '';
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        if (confirm('Сброс удалит все данные. Продолжить?')) {
+            if (confirm('Это действие нельзя отменить! Сбросить?')) {
+                localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(SETTINGS_KEY);
+                appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                settings = { theme: 'coral', dark: false };
+                saveData(); saveSettings(); renderAll(); applyTheme(); showToast('Все данные сброшены');
+            }
+        }
+    });
+    document.getElementById('tgButton').addEventListener('click', () => window.open(TG_LINK, '_blank'));
+
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.mobileTab)));
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const desktopBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+        if (desktopBtn) desktopBtn.classList.add('active');
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        const mobileBtn = document.querySelector('.mobile-nav-btn[data-mobile-tab="' + tabId + '"]');
+        if (mobileBtn) mobileBtn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+        updateFAB(); updateMobileSubtabs();
+        setTimeout(renderAllCharts, 100);
+    }
+
+    function updateMobileSubtabs() {
+        if (!isMobile()) return;
+        const activeTab = document.querySelector('.tab-panel:not(.hidden)'); if (!activeTab) return;
+        const tabId = activeTab.id;
+        const habitSubtabs = document.getElementById('mobileHabitSubtabs');
+        const financeSubtabs = document.getElementById('mobileFinanceSubtabs');
+        if (habitSubtabs) habitSubtabs.style.display = tabId === 'tab1' ? 'flex' : 'none';
+        if (financeSubtabs) financeSubtabs.style.display = tabId === 'tab3' ? 'flex' : 'none';
+        if (tabId === 'tab1') showMobileSubtab('habits-goals');
+        else if (tabId === 'tab3') showMobileSubtab('finance-budget');
+    }
+    function showMobileSubtab(subtabId) {
+        const tabMap = {
+            'habits-goals': { sections: '.mobile-habit-section', target: '#mobileHabitGoals', subtabs: '#mobileHabitSubtabs' },
+            'habits-tracker': { sections: '.mobile-habit-section', target: '#mobileHabitTracker', subtabs: '#mobileHabitSubtabs' },
+            'habits-monthly': { sections: '.mobile-habit-section', target: '#mobileHabitMonthly', subtabs: '#mobileHabitSubtabs' },
+            'habits-notes': { sections: '.mobile-habit-section', target: '#mobileHabitNotes', subtabs: '#mobileHabitSubtabs' },
+            'habits-analytics': { sections: '.mobile-habit-section', target: '#mobileHabitAnalytics', subtabs: '#mobileHabitSubtabs' },
+            'finance-budget': { sections: '.mobile-finance-section', target: '#mobileFinanceBudget', subtabs: '#mobileFinanceSubtabs' },
+            'finance-transactions': { sections: '.mobile-finance-section', target: '#mobileFinanceTransactions', subtabs: '#mobileFinanceSubtabs' },
+            'finance-overview': { sections: '.mobile-finance-section', target: '#mobileFinanceOverview', subtabs: '#mobileFinanceSubtabs' }
+        };
+        const map = tabMap[subtabId]; if (!map) return;
+        document.querySelectorAll(map.sections).forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+        const target = document.querySelector(map.target);
+        if (target) { target.style.display = 'block'; target.classList.add('active'); }
+        document.querySelectorAll(map.subtabs + ' .mobile-subtab').forEach(btn => btn.classList.toggle('active', btn.dataset.mobileSubtab === subtabId));
+        updateFAB();
+    }
+    document.querySelectorAll('.mobile-subtab').forEach(btn => btn.addEventListener('click', () => showMobileSubtab(btn.dataset.mobileSubtab)));
+
+    function updateFAB() {
+        const fab = document.getElementById('fabBtn'); if (!fab) return;
+        if (!isMobile()) { fab.style.display = 'none'; return; }
+        const activeTab = document.querySelector('.tab-panel:not(.hidden)'); if (!activeTab) return;
+        const tabId = activeTab.id;
+        fab.style.display = 'flex'; fab.onclick = null;
+        if (tabId === 'tab1') {
+            const activeSubtab = document.querySelector('#mobileHabitSubtabs .mobile-subtab.active');
+            if (activeSubtab && activeSubtab.dataset.mobileSubtab === 'habits-tracker') fab.onclick = () => document.getElementById('addHabitRowBtn').click();
+            else fab.style.display = 'none';
+        } else if (tabId === 'tab2') fab.onclick = () => document.getElementById('addTaskRowBtn').click();
+        else if (tabId === 'tab3') {
+            const activeSubtab = document.querySelector('#mobileFinanceSubtabs .mobile-subtab.active');
+            if (activeSubtab && activeSubtab.dataset.mobileSubtab === 'finance-transactions') fab.onclick = () => document.getElementById('addTransactionBtn').click();
+            else fab.style.display = 'none';
+        } else fab.style.display = 'none';
+    }
+
+    window.addSubgoal = function(sphere) { appData.annualGoals[sphere].push({ id: uid(), text: '', done: false, subgoals: [] }); saveData(); renderGoals(); };
+    function renderGoals() {
+        const sphereNames = { finance: '💰 Финансы', spirituality: '📚 Саморазвитие', career: '💼 Карьера', health: '🌿 Здоровье', relationships: '❤️ Отношения' };
+        for (const sphere of Object.keys(appData.annualGoals)) {
+            const container = document.getElementById('goals-' + sphere);
+            if (container) { container.innerHTML = ''; renderGoalsForSphere(sphere, container); }
+        }
+        const mobileContainer = document.getElementById('mobileAnnualGoals');
+        if (mobileContainer) {
+            mobileContainer.innerHTML = '';
+            for (const sphere of Object.keys(appData.annualGoals)) {
+                const sphereDiv = document.createElement('div'); sphereDiv.className = 'p-3 rounded-xl border'; sphereDiv.style.borderColor = 'var(--border)';
+                const sphereName = document.createElement('span'); sphereName.className = 'text-xs font-semibold'; sphereName.textContent = sphereNames[sphere];
+                sphereDiv.appendChild(sphereName);
+                const goalsDiv = document.createElement('div'); goalsDiv.className = 'mt-1'; sphereDiv.appendChild(goalsDiv);
+                const addBtn = document.createElement('button'); addBtn.textContent = '+ Цель'; addBtn.className = 'text-xs mt-1 btn btn-outline py-1 px-2';
+                addBtn.addEventListener('click', () => addSubgoal(sphere)); sphereDiv.appendChild(addBtn);
+                mobileContainer.appendChild(sphereDiv); renderGoalsForSphere(sphere, goalsDiv);
+            }
+        }
+    }
+    function renderGoalsForSphere(sphere, container) {
+        appData.annualGoals[sphere].forEach(goal => {
+            if (!goal.subgoals) goal.subgoals = [];
+            const row = document.createElement('div'); row.className = 'subgoal-item';
+            const check = document.createElement('span'); check.className = 'goal-check' + (goal.done ? ' completed' : ''); check.textContent = '✓';
+            check.addEventListener('click', () => { goal.done = !goal.done; saveData(); renderGoals(); });
+            row.appendChild(check);
+            const input = document.createElement('input'); input.type = 'text'; input.value = goal.text; input.placeholder = 'Цель...'; input.className = 'inline-input text-xs';
+            if (goal.done) input.style.textDecoration = 'line-through';
+            input.addEventListener('input', (e) => { goal.text = e.target.value; saveData(); });
+            row.appendChild(input);
+            const del = document.createElement('button'); del.textContent = '✕'; del.className = 'text-xs'; del.style.color = 'var(--muted)'; del.style.cursor = 'pointer'; del.style.background = 'none'; del.style.border = 'none';
+            del.addEventListener('click', () => { appData.annualGoals[sphere] = appData.annualGoals[sphere].filter(g => g.id !== goal.id); saveData(); renderGoals(); });
+            row.appendChild(del); container.appendChild(row);
+            goal.subgoals.forEach(sub => {
+                const subRow = document.createElement('div'); subRow.className = 'subtask-item'; subRow.style.marginLeft = '24px';
+                const subCheck = document.createElement('input'); subCheck.type = 'checkbox'; subCheck.className = 'habit-checkbox small'; subCheck.checked = sub.done;
+                subCheck.addEventListener('change', (e) => { sub.done = e.target.checked; saveData(); });
+                subRow.appendChild(subCheck);
+                const subInput = document.createElement('input'); subInput.type = 'text'; subInput.value = sub.text; subInput.placeholder = 'Подцель...'; subInput.className = 'inline-input text-xs';
+                subInput.addEventListener('input', (e) => { sub.text = e.target.value; saveData(); });
+                subRow.appendChild(subInput);
+                const subDel = document.createElement('button'); subDel.textContent = '✕'; subDel.className = 'text-xs'; subDel.style.color = 'var(--muted)'; subDel.style.cursor = 'pointer'; subDel.style.background = 'none'; subDel.style.border = 'none';
+                subDel.addEventListener('click', () => { goal.subgoals = goal.subgoals.filter(s => s.id !== sub.id); saveData(); renderGoals(); });
+                subRow.appendChild(subDel); container.appendChild(subRow);
+            });
+            const addSubBtn = document.createElement('button'); addSubBtn.textContent = '+ Подцель'; addSubBtn.className = 'text-xs'; addSubBtn.style.color = 'var(--secondary-dark)'; addSubBtn.style.marginLeft = '24px'; addSubBtn.style.cursor = 'pointer'; addSubBtn.style.background = 'none'; addSubBtn.style.border = 'none';
+            addSubBtn.addEventListener('click', () => { goal.subgoals.push({ id: uid(), text: '', done: false }); saveData(); renderGoals(); });
+            container.appendChild(addSubBtn);
+        });
+    }
+
+    const HABIT_COLORS = ['#FCA5A5', '#93C5FD', '#6EE7B7', '#FCD34D', '#C4B5FD', '#FDBA74', '#F9A8D4', '#7DD3FC', '#a78bfa', '#34d399'];
+    function getHabitColor(habitId) { const index = appData.habits.findIndex(h => h.id === habitId); return HABIT_COLORS[index % HABIT_COLORS.length] || '#FCA5A5'; }
+    function getMonthDays(habit) { if (!habit.monthlyDays) habit.monthlyDays = {}; if (!habit.monthlyDays[currentMonth]) habit.monthlyDays[currentMonth] = Array(31).fill(false); return habit.monthlyDays[currentMonth]; }
+
+    function renderHabitMatrix() {
+        const tbody = document.getElementById('habitTableBody'); const thead = document.getElementById('habitTableHead'); if (!tbody || !thead) return;
+        tbody.innerHTML = '';
+        const monthInput = document.getElementById('habitMonth'); if (monthInput) monthInput.value = currentMonth;
+        const [year, month] = currentMonth.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDay = new Date(year, month - 1, 1).getDay();
+        const offset = (firstDay + 6) % 7;
+        let headRow1 = '<tr class="text-xs text-muted"><th class="text-left p-2">Привычка</th>';
+        let headRow2 = '<tr class="text-xs text-muted"><th></th>';
+        const totalDays = daysInMonth + offset;
+        let weeksCount = Math.ceil(totalDays / 7);
+        const lastWeekDays = totalDays % 7;
+        if (lastWeekDays === 1 || lastWeekDays === 0) weeksCount--;
+        if (weeksCount < 1) weeksCount = 1;
+        for (let w = 0; w < weeksCount; w++) headRow1 += '<th colspan="7" class="text-center rounded-t-lg" style="background:color-mix(in srgb,var(--secondary) 25%,transparent);">Неделя ' + (w+1) + '</th>';
+        headRow1 += '</tr>';
+        for (let i = 0; i < daysInMonth; i++) headRow2 += '<th>' + dayNames[(i + offset) % 7] + '<br><span style="font-size:9px;color:var(--muted);">' + (i+1) + '</span></th>';
+        headRow2 += '</tr>';
+        thead.innerHTML = headRow1 + headRow2;
+        if (appData.habits.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = '<td colspan="' + (daysInMonth + 2) + '" class="p-4 text-center text-muted text-sm">Привычек пока нет. Нажми «+ Добавить привычку»</td>';
+            tbody.appendChild(emptyRow);
+        }
+        appData.habits.forEach(habit => {
+            const monthDays = getMonthDays(habit);
+            const tr = document.createElement('tr'); tr.className = 'border-b'; tr.style.borderColor = 'var(--border)';
+            const tdName = document.createElement('td'); tdName.className = 'p-2 min-w-[160px]';
+            const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = habit.name; nameInput.className = 'inline-input text-sm font-medium';
+            nameInput.addEventListener('input', (e) => { habit.name = e.target.value; saveData(); });
+            tdName.appendChild(nameInput);
+            const daySelector = document.createElement('div'); daySelector.className = 'flex gap-1.5 mt-2 flex-wrap';
+            dayNames.forEach((day, idx) => {
+                const btn = document.createElement('button'); btn.textContent = day; btn.type = 'button'; btn.className = 'day-selector-btn' + (habit.activeDays[idx] ? ' active' : '');
+                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+                daySelector.appendChild(btn);
+            });
+            tdName.appendChild(daySelector); tr.appendChild(tdName);
+            for (let i = 0; i < daysInMonth; i++) {
+                const td = document.createElement('td'); td.className = 'p-1 text-center';
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'habit-checkbox';
+                const dayOfWeek = (i + offset) % 7; checkbox.disabled = !habit.activeDays[dayOfWeek]; checkbox.checked = monthDays[i] || false;
+                checkbox.addEventListener('change', (e) => { monthDays[i] = e.target.checked; saveData(); renderAnalytics(); });
+                td.appendChild(checkbox); tr.appendChild(td);
+            }
+            const tdDel = document.createElement('td'); tdDel.className = 'p-1 text-center';
+            const delBtn = document.createElement('button'); delBtn.textContent = '✕'; delBtn.className = 'text-sm'; delBtn.style.color = 'var(--muted)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+            delBtn.addEventListener('click', () => { appData.habits = appData.habits.filter(h => h.id !== habit.id); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+            tdDel.appendChild(delBtn); tr.appendChild(tdDel); tbody.appendChild(tr);
+        });
+    }
+
+    function renderMobileHabits() {
+        const container = document.getElementById('mobileHabitsList'); if (!container) return;
+        container.innerHTML = '';
+        const monthInput = document.getElementById('mobileHabitMonth'); if (monthInput) monthInput.value = currentMonth;
+        if (appData.habits.length === 0) { container.innerHTML = '<div class="text-center text-muted text-sm py-4">Привычек пока нет. Нажмите "+" внизу</div>'; return; }
+        appData.habits.forEach(habit => {
+            const card = document.createElement('div'); card.className = 'mobile-habit-card';
+            const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = habit.name; nameInput.className = 'inline-input text-sm font-medium mb-2'; nameInput.placeholder = 'Название привычки';
+            nameInput.addEventListener('input', (e) => { habit.name = e.target.value; saveData(); renderHabitMatrix(); });
+            card.appendChild(nameInput);
+            const daysContainer = document.createElement('div'); daysContainer.className = 'flex gap-1.5 mb-2 flex-wrap';
+            dayNames.forEach((day, idx) => {
+                const btn = document.createElement('button'); btn.textContent = day; btn.type = 'button'; btn.className = 'mobile-day-btn' + (habit.activeDays[idx] ? ' active' : '');
+                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderAnalytics(); });
+                daysContainer.appendChild(btn);
+            });
+            card.appendChild(daysContainer);
+            const calendarContainer = document.createElement('div'); calendarContainer.className = 'mobile-habit-calendar mt-2';
+            const calendarScroll = document.createElement('div'); calendarScroll.className = 'calendar-scroll';
+            const calendarDays = document.createElement('div'); calendarDays.className = 'calendar-days';
+            const [year, month] = currentMonth.split('-').map(Number);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const monthDays = getMonthDays(habit);
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div'); dayElement.className = 'calendar-day';
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'habit-checkbox'; checkbox.style.width = '20px'; checkbox.style.height = '20px';
+                const dayIndex = day - 1; checkbox.checked = monthDays[dayIndex] || false;
+                const date = new Date(year, month - 1, day); const dayOfWeek = (date.getDay() + 6) % 7; checkbox.disabled = !habit.activeDays[dayOfWeek];
+                checkbox.addEventListener('change', (e) => { monthDays[dayIndex] = e.target.checked; saveData(); renderAnalytics(); });
+                const dayLabel = document.createElement('span'); dayLabel.textContent = day;
+                dayElement.appendChild(checkbox); dayElement.appendChild(dayLabel); calendarDays.appendChild(dayElement);
+            }
+            calendarScroll.appendChild(calendarDays); calendarContainer.appendChild(calendarScroll); card.appendChild(calendarContainer);
+            const delBtn = document.createElement('button'); delBtn.textContent = '✕ Удалить'; delBtn.className = 'text-xs mt-2'; delBtn.style.color = 'var(--primary-dark)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+            delBtn.addEventListener('click', () => { appData.habits = appData.habits.filter(h => h.id !== habit.id); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+            card.appendChild(delBtn); container.appendChild(card);
+        });
+    }
+
+    document.getElementById('habitMonth').addEventListener('change', (e) => { currentMonth = e.target.value; saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+    document.getElementById('mobileHabitMonth').addEventListener('change', (e) => { currentMonth = e.target.value; saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+    document.getElementById('addHabitRowBtn').addEventListener('click', () => { appData.habits.push({ id: uid(), name: 'Новая привычка', activeDays: [true,true,true,true,true,true,true], monthlyDays: {} }); saveData(); renderHabitMatrix(); renderMobileHabits(); });
+
+    function renderAnalytics() {
+        const container = document.getElementById('habitProgressList'); const containerDesktop = document.getElementById('habitProgressListDesktop');
+        [container, containerDesktop].forEach(cont => {
+            if (!cont) return;
+            cont.innerHTML = '';
+            appData.habits.forEach(habit => {
+                const monthDays = getMonthDays(habit);
+                const activeCount = habit.activeDays.filter(Boolean).length;
+                const totalPossible = activeCount * 4;
+                const done = monthDays.filter(Boolean).length;
+                const percent = totalPossible ? Math.min(Math.round((done / totalPossible) * 100), 100) : 0;
+                const color = getHabitColor(habit.id);
+                const wrap = document.createElement('div');
+                wrap.innerHTML = '<div class="flex justify-between text-sm mb-1"><span><span class="habit-color-dot" style="background:' + color + ';"></span>' + habit.name + '</span><span class="font-bold">' + percent + '%</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width:' + percent + '%;background:' + color + ';"></div></div>';
+                cont.appendChild(wrap);
+            });
+            if (appData.habits.length === 0) cont.innerHTML = '<div class="text-xs text-muted">Добавь привычки, чтобы увидеть аналитику</div>';
+        });
+        renderDonut();
+    }
+
+    function renderDonut() {
+        const canvas = document.getElementById('donutChart'); const canvasDesktop = document.getElementById('donutChartDesktop');
+        [canvas, canvasDesktop].forEach(canv => {
+            if (!canv) return;
+            const labels = appData.habits.map(h => h.name);
+            const chartData = appData.habits.map(h => { const md = getMonthDays(h); return md.filter(Boolean).length; });
+            const colors = appData.habits.map(h => getHabitColor(h.id));
+            const ctx = canv.getContext('2d');
+            const chartKey = canv.id === 'donutChart' ? 'donut' : 'donutDesktop';
+            if (charts[chartKey]) charts[chartKey].destroy();
+            charts[chartKey] = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: labels.length ? labels : ['Нет привычек'], datasets: [{ data: chartData.length ? chartData : [1], backgroundColor: colors.length ? colors : ['#cbd5e1'], borderWidth: 0 }] },
+                options: { cutout: '65%', plugins: { legend: { display: true, position: 'bottom', labels: { color: 'var(--muted)', font: { size: 10 } } } } }
+            });
+        });
+    }
+
+    function renderMonthly() {
+        const container = document.getElementById('monthlyHabitsContainer'); const containerDesktop = document.getElementById('monthlyHabitsContainerDesktop');
+        [container, containerDesktop].forEach(cont => {
+            if (!cont) return;
+            cont.innerHTML = '';
+            if (appData.monthlyHabits.length === 0) { const emptyMsg = document.createElement('div'); emptyMsg.className = 'text-xs text-muted'; emptyMsg.textContent = 'Задач пока нет'; cont.appendChild(emptyMsg); }
+            appData.monthlyHabits.forEach(habit => {
+                const row = document.createElement('div'); row.className = 'flex items-center gap-2 mb-2';
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'habit-checkbox'; checkbox.checked = habit.done;
+                checkbox.addEventListener('change', (e) => { habit.done = e.target.checked; saveData(); });
+                row.appendChild(checkbox);
+                const input = document.createElement('input'); input.type = 'text'; input.value = habit.name; input.className = 'inline-input text-sm flex-1';
+                input.addEventListener('input', (e) => { habit.name = e.target.value; saveData(); });
+                row.appendChild(input);
+                const del = document.createElement('button'); del.textContent = '✕'; del.className = 'text-sm'; del.style.color = 'var(--muted)'; del.style.cursor = 'pointer'; del.style.background = 'none'; del.style.border = 'none';
+                del.addEventListener('click', () => { appData.monthlyHabits = appData.monthlyHabits.filter(h => h.id !== habit.id); saveData(); renderMonthly(); });
+                row.appendChild(del); cont.appendChild(row);
+            });
+            const addBtn = document.createElement('button'); addBtn.textContent = '+ Добавить'; addBtn.className = 'btn btn-outline text-xs mt-2';
+            addBtn.addEventListener('click', () => { appData.monthlyHabits.push({ id: uid(), name: 'Ежемесячно', done: false }); saveData(); renderMonthly(); });
+            cont.appendChild(addBtn);
+        });
+    }
+
+    const notesArea = document.getElementById('notesArea');
+    const notesAreaDesktop = document.getElementById('notesAreaDesktop');
+    if (notesArea) { notesArea.value = appData.notes || ''; notesArea.addEventListener('input', (e) => { appData.notes = e.target.value; saveData(); if (notesAreaDesktop) notesAreaDesktop.value = e.target.value; }); }
+    if (notesAreaDesktop) { notesAreaDesktop.value = appData.notes || ''; notesAreaDesktop.addEventListener('input', (e) => { appData.notes = e.target.value; saveData(); if (notesArea) notesArea.value = e.target.value; }); }
+
+    function renderTasks() {
+        const tbody = document.getElementById('tasksTableBody'); if (!tbody) return;
+        tbody.innerHTML = '';
+        const searchTerm = (document.getElementById('taskSearch').value || '').toLowerCase();
+        const filteredTasks = appData.tasks.filter(t => t.name.toLowerCase().includes(searchTerm)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        if (filteredTasks.length === 0) { const emptyRow = document.createElement('tr'); emptyRow.innerHTML = '<td colspan="9" class="p-4 text-center text-muted text-sm">Задач пока нет. Нажми «+ Добавить задачу»</td>'; tbody.appendChild(emptyRow); }
+        filteredTasks.forEach(task => {
+            const tr = document.createElement('tr'); tr.className = 'border-b'; tr.style.borderColor = 'var(--border)';
+            if (task.pinned) tr.style.borderLeft = '4px solid var(--primary)';
+            const tdPin = document.createElement('td'); tdPin.className = 'p-2 text-center';
+            const pinBtn = document.createElement('button'); pinBtn.textContent = task.pinned ? '📌' : '📍'; pinBtn.style.opacity = task.pinned ? '1' : '0.3'; pinBtn.style.cursor = 'pointer'; pinBtn.style.background = 'none'; pinBtn.style.border = 'none';
+            pinBtn.addEventListener('click', () => { task.pinned = !task.pinned; saveData(); renderTasks(); renderMobileTasks(); });
+            tdPin.appendChild(pinBtn); tr.appendChild(tdPin);
+            const tdName = document.createElement('td'); tdName.className = 'p-2';
+            const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = task.name; nameInput.className = 'inline-input text-sm';
+            if (task.done) nameInput.style.textDecoration = 'line-through';
+            nameInput.addEventListener('input', (e) => { task.name = e.target.value; saveData(); renderMobileTasks(); });
+            tdName.appendChild(nameInput); tr.appendChild(tdName);
+            const tdDate = document.createElement('td'); tdDate.className = 'p-2';
+            const dateInput = document.createElement('input'); dateInput.type = 'date'; dateInput.value = task.date; dateInput.className = 'inline-input text-sm';
+            dateInput.addEventListener('change', (e) => { task.date = e.target.value; saveData(); renderTasks(); renderMobileTasks(); });
+            tdDate.appendChild(dateInput); tr.appendChild(tdDate);
+            const tdDays = document.createElement('td'); tdDays.className = 'p-2 text-center';
+            const days = calcDays(task.date); tdDays.textContent = formatDays(days);
+            tdDays.style.color = days < 0 ? 'var(--primary-dark)' : days === 0 ? '#fbbf24' : 'var(--muted)';
+            tdDays.style.fontWeight = days <= 0 ? 'bold' : 'normal';
+            tr.appendChild(tdDays);
+            const tdPriority = document.createElement('td'); tdPriority.className = 'p-2';
+            const prioritySelect = document.createElement('select');
+            ['Срочно','Высокий','Средний','Низкий'].forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.textContent = p; if (p === task.priority) opt.selected = true; prioritySelect.appendChild(opt); });
+            prioritySelect.className = 'inline-input text-xs'; prioritySelect.style.width = 'auto';
+            prioritySelect.addEventListener('change', (e) => { task.priority = e.target.value; saveData(); renderMobileTasks(); });
+            tdPriority.appendChild(prioritySelect); tr.appendChild(tdPriority);
+            const tdStatus = document.createElement('td'); tdStatus.className = 'p-2 text-center';
+            const statusCheck = document.createElement('input'); statusCheck.type = 'checkbox'; statusCheck.className = 'habit-checkbox'; statusCheck.checked = task.done; statusCheck.style.width = '18px'; statusCheck.style.height = '18px';
+            statusCheck.addEventListener('change', (e) => { task.done = e.target.checked; saveData(); renderTasks(); renderMobileTasks(); updateTaskKpis(); });
+            tdStatus.appendChild(statusCheck); tr.appendChild(tdStatus);
+            const tdCat = document.createElement('td'); tdCat.className = 'p-2';
+            const catSelect = document.createElement('select');
+            ['Личное','Работа','Другое'].forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; if (c === task.category) opt.selected = true; catSelect.appendChild(opt); });
+            catSelect.className = 'inline-input text-xs'; catSelect.style.width = 'auto';
+            catSelect.addEventListener('change', (e) => { task.category = e.target.value; saveData(); renderMobileTasks(); });
+            tdCat.appendChild(catSelect); tr.appendChild(tdCat);
+            const tdSub = document.createElement('td'); tdSub.className = 'p-2';
+            const subContainer = document.createElement('div'); subContainer.className = 'space-y-1';
+            if (!task.subtasks) task.subtasks = [];
+            task.subtasks.forEach(sub => {
+                const subRow = document.createElement('div'); subRow.className = 'subtask-item';
+                const subCheck = document.createElement('input'); subCheck.type = 'checkbox'; subCheck.className = 'habit-checkbox small'; subCheck.checked = sub.done;
+                subCheck.addEventListener('change', (e) => { sub.done = e.target.checked; saveData(); renderMobileTasks(); });
+                subRow.appendChild(subCheck);
+                const subInput = document.createElement('input'); subInput.type = 'text'; subInput.value = sub.name; subInput.className = 'inline-input text-xs';
+                if (sub.done) subInput.style.textDecoration = 'line-through';
+                subInput.addEventListener('input', (e) => { sub.name = e.target.value; saveData(); renderMobileTasks(); });
+                subRow.appendChild(subInput);
+                const subDel = document.createElement('button'); subDel.textContent = '✕'; subDel.className = 'text-xs'; subDel.style.color = 'var(--muted)'; subDel.style.cursor = 'pointer'; subDel.style.background = 'none'; subDel.style.border = 'none';
+                subDel.addEventListener('click', () => { task.subtasks = task.subtasks.filter(s => s.id !== sub.id); saveData(); renderTasks(); renderMobileTasks(); });
+                subRow.appendChild(subDel); subContainer.appendChild(subRow);
+            });
+            const addSubBtn = document.createElement('button'); addSubBtn.textContent = '+ Подзадача'; addSubBtn.className = 'text-xs'; addSubBtn.style.color = 'var(--secondary-dark)'; addSubBtn.style.cursor = 'pointer'; addSubBtn.style.background = 'none'; addSubBtn.style.border = 'none';
+            addSubBtn.addEventListener('click', () => { task.subtasks.push({ id: uid(), name: 'Новая подзадача', done: false }); saveData(); renderTasks(); renderMobileTasks(); });
+            subContainer.appendChild(addSubBtn); tdSub.appendChild(subContainer); tr.appendChild(tdSub);
+            const tdDel = document.createElement('td'); tdDel.className = 'p-2 text-center';
+            const delBtn = document.createElement('button'); delBtn.textContent = '🗑️'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+            delBtn.addEventListener('click', () => { appData.deletedTasks.push(task); appData.tasks = appData.tasks.filter(t => t.id !== task.id); saveData(); renderTasks(); renderMobileTasks(); renderTrash(); });
+            tdDel.appendChild(delBtn); tr.appendChild(tdDel); tbody.appendChild(tr);
+        });
+        updateTaskKpis();
+    }
+
+    function renderMobileTasks() {
+        const container = document.getElementById('mobileTasksList'); if (!container) return;
+        container.innerHTML = '';
+        const searchTerm = (document.getElementById('taskSearch').value || '').toLowerCase();
+        const filteredTasks = appData.tasks.filter(t => t.name.toLowerCase().includes(searchTerm)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        if (filteredTasks.length === 0) { container.innerHTML = '<div class="text-center text-muted text-sm py-4">Задач пока нет. Нажмите "+" внизу</div>'; return; }
+        filteredTasks.forEach(task => {
+            const card = document.createElement('div'); card.className = 'mobile-task-card' + (task.pinned ? ' pinned' : '');
+            const topRow = document.createElement('div'); topRow.className = 'flex items-center gap-2';
+            const check = document.createElement('input'); check.type = 'checkbox'; check.className = 'habit-checkbox'; check.style.width = '22px'; check.style.height = '22px'; check.checked = task.done;
+            check.addEventListener('change', (e) => { e.stopPropagation(); task.done = e.target.checked; saveData(); renderTasks(); renderMobileTasks(); updateTaskKpis(); });
+            topRow.appendChild(check);
+            const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = task.name; nameInput.className = 'inline-input text-sm flex-1'; nameInput.placeholder = 'Название задачи';
+            if (task.done) nameInput.style.textDecoration = 'line-through';
+            nameInput.addEventListener('click', (e) => e.stopPropagation());
+            nameInput.addEventListener('input', (e) => { task.name = e.target.value; saveData(); renderTasks(); });
+            topRow.appendChild(nameInput);
+            const pinIcon = document.createElement('span'); pinIcon.textContent = task.pinned ? '📌' : ''; pinIcon.style.fontSize = '14px'; topRow.appendChild(pinIcon);
+            const arrow = document.createElement('span'); arrow.textContent = '▼'; arrow.style.fontSize = '10px'; arrow.style.color = 'var(--muted)'; topRow.appendChild(arrow);
+            card.appendChild(topRow);
+            const details = document.createElement('div'); details.className = 'mobile-task-details';
+            const dateRow = document.createElement('div'); dateRow.className = 'flex items-center gap-2 mb-2';
+            const dateLabel = document.createElement('span'); dateLabel.textContent = '📅'; dateLabel.className = 'text-sm'; dateRow.appendChild(dateLabel);
+            const dateInput = document.createElement('input'); dateInput.type = 'date'; dateInput.value = task.date; dateInput.className = 'inline-input text-xs'; dateInput.style.flex = '1';
+            dateInput.addEventListener('click', (e) => e.stopPropagation());
+            dateInput.addEventListener('change', (e) => { task.date = e.target.value; saveData(); renderTasks(); });
+            dateRow.appendChild(dateInput); details.appendChild(dateRow);
+            const priorityRow = document.createElement('div'); priorityRow.className = 'flex items-center gap-2 mb-2';
+            const priorityLabel = document.createElement('span'); priorityLabel.textContent = '⚡'; priorityLabel.className = 'text-sm'; priorityRow.appendChild(priorityLabel);
+            const prioritySelect = document.createElement('select');
+            ['Срочно','Высокий','Средний','Низкий'].forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.textContent = p; if (p === task.priority) opt.selected = true; prioritySelect.appendChild(opt); });
+            prioritySelect.className = 'inline-input text-xs'; prioritySelect.style.flex = '1';
+            prioritySelect.addEventListener('click', (e) => e.stopPropagation());
+            prioritySelect.addEventListener('change', (e) => { task.priority = e.target.value; saveData(); renderTasks(); });
+            priorityRow.appendChild(prioritySelect); details.appendChild(priorityRow);
+            const pinRow = document.createElement('div'); pinRow.className = 'mb-2';
+            const pinBtn = document.createElement('button'); pinBtn.textContent = task.pinned ? '📌 Открепить' : '📍 Закрепить'; pinBtn.className = 'text-xs'; pinBtn.style.color = 'var(--secondary-dark)'; pinBtn.style.cursor = 'pointer'; pinBtn.style.background = 'none'; pinBtn.style.border = 'none';
+            pinBtn.addEventListener('click', (e) => { e.stopPropagation(); task.pinned = !task.pinned; saveData(); renderTasks(); renderMobileTasks(); });
+            pinRow.appendChild(pinBtn); details.appendChild(pinRow);
+            if (!task.subtasks) task.subtasks = [];
+            const subtasksContainer = document.createElement('div'); subtasksContainer.className = 'mb-2';
+            task.subtasks.forEach(sub => {
+                const subRow = document.createElement('div'); subRow.className = 'flex items-center gap-2 mb-1';
+                const subCheck = document.createElement('input'); subCheck.type = 'checkbox'; subCheck.className = 'habit-checkbox small'; subCheck.checked = sub.done;
+                subCheck.addEventListener('click', (e) => e.stopPropagation());
+                subCheck.addEventListener('change', (e) => { sub.done = e.target.checked; saveData(); });
+                subRow.appendChild(subCheck);
+                const subInput = document.createElement('input'); subInput.type = 'text'; subInput.value = sub.name; subInput.className = 'inline-input text-xs flex-1'; subInput.placeholder = 'Подзадача';
+                if (sub.done) subInput.style.textDecoration = 'line-through';
+                subInput.addEventListener('click', (e) => e.stopPropagation());
+                subInput.addEventListener('input', (e) => { sub.name = e.target.value; saveData(); renderTasks(); });
+                subRow.appendChild(subInput);
+                const subDel = document.createElement('button'); subDel.textContent = '✕'; subDel.className = 'text-xs'; subDel.style.color = 'var(--muted)'; subDel.style.cursor = 'pointer'; subDel.style.background = 'none'; subDel.style.border = 'none';
+                subDel.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks = task.subtasks.filter(s => s.id !== sub.id); saveData(); renderTasks(); renderMobileTasks(); });
+                subRow.appendChild(subDel); subtasksContainer.appendChild(subRow);
+            });
+            const addSubBtn = document.createElement('button'); addSubBtn.textContent = '+ Подзадача'; addSubBtn.className = 'text-xs'; addSubBtn.style.color = 'var(--secondary-dark)'; addSubBtn.style.cursor = 'pointer'; addSubBtn.style.background = 'none'; addSubBtn.style.border = 'none';
+            addSubBtn.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks.push({ id: uid(), name: 'Новая подзадача', done: false }); saveData(); renderTasks(); renderMobileTasks(); });
+            subtasksContainer.appendChild(addSubBtn); details.appendChild(subtasksContainer);
+            const delBtn = document.createElement('button'); delBtn.textContent = '🗑️ Удалить'; delBtn.className = 'text-xs'; delBtn.style.color = 'var(--primary-dark)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+            delBtn.addEventListener('click', (e) => { e.stopPropagation(); appData.deletedTasks.push(task); appData.tasks = appData.tasks.filter(t => t.id !== task.id); saveData(); renderTasks(); renderMobileTasks(); renderTrash(); });
+            details.appendChild(delBtn); card.appendChild(details);
+            card.addEventListener('click', (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return; card.classList.toggle('expanded'); });
+            container.appendChild(card);
+        });
+    }
+
+    function calcDays(dateStr) { if (!dateStr) return 0; const today = new Date(getToday()); today.setHours(0,0,0,0); const target = new Date(dateStr); target.setHours(0,0,0,0); return Math.round((target - today) / 86400000); }
+    function formatDays(days) { if (days > 365) { const years = Math.floor(days / 365); const months = Math.floor((days % 365) / 30); return years + ' г ' + months + ' мес'; } if (days > 30) { const months = Math.floor(days / 30); const daysLeft = days % 30; return months + ' мес ' + daysLeft + ' дн'; } if (days > 0) return days + ' дн'; if (days === 0) return 'Сегодня'; return Math.abs(days) + ' дн назад'; }
+
+    function updateTaskKpis() {
+        const total = appData.tasks.length; const done = appData.tasks.filter(t => t.done).length;
+        const tasksDoneKpi = document.getElementById('tasksDoneKpi'); const progressPercentKpi = document.getElementById('progressPercentKpi');
+        const todayDeadlineKpi = document.getElementById('todayDeadlineKpi'); const overdueKpi = document.getElementById('overdueKpi');
+        if (tasksDoneKpi) tasksDoneKpi.textContent = done + '/' + total;
+        if (progressPercentKpi) progressPercentKpi.textContent = (total ? Math.round((done / total) * 100) : 0) + '%';
+        const todayStr = getToday();
+        if (todayDeadlineKpi) todayDeadlineKpi.textContent = appData.tasks.filter(t => t.date === todayStr).length;
+        if (overdueKpi) overdueKpi.textContent = appData.tasks.filter(t => !t.done && t.date && new Date(t.date) < new Date(new Date().setHours(0,0,0,0))).length;
+    }
+
+    document.getElementById('taskSearch').addEventListener('input', () => { renderTasks(); renderMobileTasks(); });
+    document.getElementById('addTaskRowBtn').addEventListener('click', () => { appData.tasks.push({ id: uid(), name: 'Новая задача', date: getToday(), priority: 'Средний', category: 'Личное', done: false, pinned: false, subtasks: [] }); saveData(); renderTasks(); renderMobileTasks(); });
+
+    function renderTrash() {
+        const container = document.getElementById('trashContainer'); if (!container) return;
+        container.innerHTML = '';
+        if (appData.deletedTasks.length === 0) { container.textContent = 'Пусто'; return; }
+        appData.deletedTasks.forEach(task => {
+            const row = document.createElement('div'); row.className = 'flex items-center justify-between py-2 border-b'; row.style.borderColor = 'var(--border)';
+            const name = document.createElement('span'); name.textContent = task.name; name.className = 'text-sm'; name.style.textDecoration = 'line-through'; name.style.opacity = '0.6'; row.appendChild(name);
+            const actions = document.createElement('div'); actions.className = 'flex gap-2';
+            const restoreBtn = document.createElement('button'); restoreBtn.textContent = '↩️ Восстановить'; restoreBtn.className = 'text-xs'; restoreBtn.style.color = 'var(--secondary-dark)'; restoreBtn.style.cursor = 'pointer'; restoreBtn.style.background = 'none'; restoreBtn.style.border = 'none';
+            restoreBtn.addEventListener('click', () => { appData.tasks.push(task); appData.deletedTasks = appData.deletedTasks.filter(t => t.id !== task.id); saveData(); renderTasks(); renderMobileTasks(); renderTrash(); });
+            actions.appendChild(restoreBtn);
+            const permDelBtn = document.createElement('button'); permDelBtn.textContent = '✕ Удалить'; permDelBtn.className = 'text-xs'; permDelBtn.style.color = 'var(--primary-dark)'; permDelBtn.style.cursor = 'pointer'; permDelBtn.style.background = 'none'; permDelBtn.style.border = 'none';
+            permDelBtn.addEventListener('click', () => { appData.deletedTasks = appData.deletedTasks.filter(t => t.id !== task.id); saveData(); renderTrash(); });
+            actions.appendChild(permDelBtn); row.appendChild(actions); container.appendChild(row);
+        });
+    }
+
+    const SPENDING_COLORS = ['#FCA5A5', '#93C5FD', '#6EE7B7', '#FCD34D', '#C4B5FD', '#FDBA74', '#F9A8D4', '#7DD3FC', '#a78bfa', '#34d399', '#fbbf24', '#f87171'];
+    function renderBudget() {
+        const budgetMap = { income: 'incomeBudgetRows', subscriptions: 'subscriptionsRows', regular: 'regularRows', spending: 'spendingRows', savings: 'savingsRows', debts: 'debtsRows' };
+        for (const [key, containerId] of Object.entries(budgetMap)) {
+            const el = document.getElementById(containerId); if (!el) continue;
+            el.innerHTML = '';
+            appData.budget[key].forEach((item, idx) => {
+                const row = document.createElement('div'); row.className = 'flex items-center gap-2 text-sm mb-2';
+                const subInput = document.createElement('input'); subInput.type = 'text'; subInput.value = item.sub; subInput.className = 'inline-input text-sm flex-1'; subInput.placeholder = 'Подкатегория...';
+                subInput.addEventListener('input', (e) => { item.sub = e.target.value; saveData(); populateCategorySelects(); renderMobileBudget(); });
+                row.appendChild(subInput);
+                const amtInput = document.createElement('input'); amtInput.type = 'number'; amtInput.value = item.amount; amtInput.className = 'inline-input text-sm input-with-delete'; amtInput.style.width = '100px'; amtInput.placeholder = 'Лимит';
+                amtInput.addEventListener('input', (e) => { item.amount = parseFloat(e.target.value) || 0; saveData(); updateFinancialData(); renderMobileBudget(); });
+                row.appendChild(amtInput);
+                const delBtn = document.createElement('button'); delBtn.textContent = '✕'; delBtn.className = 'text-sm'; delBtn.style.color = 'var(--muted)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+                delBtn.addEventListener('click', () => { appData.budget[key] = appData.budget[key].filter((_, i) => i !== idx); saveData(); renderBudget(); renderMobileBudget(); populateCategorySelects(); });
+                row.appendChild(delBtn); el.appendChild(row);
+            });
+        }
+        populateCategorySelects(); updateFinancialData();
+    }
+    function renderMobileBudget() {
+        const mobileMap = { income: 'mobileIncomeRows', subscriptions: 'mobileSubscriptionsRows', regular: 'mobileRegularRows', spending: 'mobileSpendingRows', savings: 'mobileSavingsRows', debts: 'mobileDebtsRows' };
+        for (const [key, containerId] of Object.entries(mobileMap)) {
+            const el = document.getElementById(containerId); if (!el) continue;
+            el.innerHTML = '';
+            appData.budget[key].forEach((item, idx) => {
+                const row = document.createElement('div'); row.className = 'flex flex-col gap-1 text-xs mb-2';
+                const subInput = document.createElement('input'); subInput.type = 'text'; subInput.value = item.sub; subInput.className = 'inline-input text-xs'; subInput.placeholder = 'Подкатегория...'; subInput.style.minHeight = '36px';
+                subInput.addEventListener('input', (e) => { item.sub = e.target.value; saveData(); populateCategorySelects(); renderBudget(); });
+                row.appendChild(subInput);
+                const amtInput = document.createElement('input'); amtInput.type = 'number'; amtInput.value = item.amount; amtInput.className = 'inline-input text-xs'; amtInput.style.minHeight = '36px'; amtInput.placeholder = 'Лимит';
+                amtInput.addEventListener('input', (e) => { item.amount = parseFloat(e.target.value) || 0; saveData(); updateFinancialData(); renderBudget(); });
+                row.appendChild(amtInput);
+                const delBtn = document.createElement('button'); delBtn.textContent = '✕ Удалить'; delBtn.className = 'text-xs'; delBtn.style.color = 'var(--muted)'; delBtn.style.cursor = 'pointer'; delBtn.style.minHeight = '36px'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
+                delBtn.addEventListener('click', () => { appData.budget[key] = appData.budget[key].filter((_, i) => i !== idx); saveData(); renderBudget(); renderMobileBudget(); populateCategorySelects(); });
+                row.appendChild(delBtn); el.appendChild(row);
+            });
+        }
+    }
+    window.addBudgetItem = function(key) { appData.budget[key].push({ sub: '', amount: 0, fact: 0 }); saveData(); renderBudget(); renderMobileBudget(); };
+    function populateCategorySelects() {
+        const catSelect = document.getElementById('transactionCategory');
+        if (catSelect) { const currentVal = catSelect.value; catSelect.innerHTML = ''; ['Доход', 'Подписки', 'Регулярные платежи', 'Траты', 'Накопления', 'Долги'].forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; if (cat === currentVal) opt.selected = true; catSelect.appendChild(opt); }); }
+        const catSelectDesktop = document.getElementById('transactionCategoryDesktop');
+        if (catSelectDesktop) { const currentValDesktop = catSelectDesktop.value; catSelectDesktop.innerHTML = ''; ['Доход', 'Подписки', 'Регулярные платежи', 'Траты', 'Накопления', 'Долги'].forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; if (cat === currentValDesktop) opt.selected = true; catSelectDesktop.appendChild(opt); }); }
+        updateSubcategories(); updateAmountPlaceholder();
+    }
+    function updateSubcategories() {
+        const catSelect = document.getElementById('transactionCategory'); const subSelect = document.getElementById('transactionSubcategory');
+        if (catSelect && subSelect) { const cat = catSelect.value; const key = getBudgetKey(cat); subSelect.innerHTML = '<option value="">Подкатегория...</option>'; if (key && appData.budget[key]) { appData.budget[key].forEach(item => { if (item.sub) { const opt = document.createElement('option'); opt.value = item.sub; opt.textContent = item.sub; subSelect.appendChild(opt); } }); } }
+        const catSelectDesktop = document.getElementById('transactionCategoryDesktop'); const subSelectDesktop = document.getElementById('transactionSubcategoryDesktop');
+        if (catSelectDesktop && subSelectDesktop) { const cat = catSelectDesktop.value; const key = getBudgetKey(cat); subSelectDesktop.innerHTML = '<option value="">Подкатегория...</option>'; if (key && appData.budget[key]) { appData.budget[key].forEach(item => { if (item.sub) { const opt = document.createElement('option'); opt.value = item.sub; opt.textContent = item.sub; subSelectDesktop.appendChild(opt); } }); } }
+    }
+    function updateAmountPlaceholder() {
+        const catSelect = document.getElementById('transactionCategory'); const amountInput = document.getElementById('transactionAmount');
+        if (catSelect && amountInput) { if (catSelect.value === 'Доход') amountInput.placeholder = 'Сколько получено'; else amountInput.placeholder = 'Сколько потрачено'; }
+        const catSelectDesktop = document.getElementById('transactionCategoryDesktop'); const amountInputDesktop = document.getElementById('transactionAmountDesktop');
+        if (catSelectDesktop && amountInputDesktop) { if (catSelectDesktop.value === 'Доход') amountInputDesktop.placeholder = 'Сколько получено'; else amountInputDesktop.placeholder = 'Сколько потрачено'; }
+    }
+    function getBudgetKey(cat) { switch (cat) { case 'Доход': return 'income'; case 'Подписки': return 'subscriptions'; case 'Регулярные платежи': return 'regular'; case 'Траты': return 'spending'; case 'Накопления': return 'savings'; case 'Долги': return 'debts'; default: return null; } }
+    document.getElementById('transactionCategory').addEventListener('change', () => { updateSubcategories(); updateAmountPlaceholder(); });
+    document.getElementById('transactionCategoryDesktop').addEventListener('change', () => { updateSubcategories(); updateAmountPlaceholder(); });
+
+    function renderTransactions() {
+        const tbody = document.getElementById('transactionsTableBody'); if (!tbody) return;
+        tbody.innerHTML = '';
+        if (appData.transactions.length === 0) { const emptyRow = document.createElement('tr'); emptyRow.innerHTML = '<td colspan="6" class="p-4 text-center text-muted text-sm">Транзакций пока нет</td>'; tbody.appendChild(emptyRow); }
+        appData.transactions.forEach(tx => {
+            const tr = document.createElement('tr'); tr.className = 'border-b'; tr.style.borderColor = 'var(--border)';
+            const sign = tx.type === 'income' ? '+' : '-'; const color = tx.type === 'income' ? '#34d399' : 'var(--primary-dark)';
+            tr.innerHTML = '<td class="p-2">' + tx.date + '</td><td class="p-2">' + tx.desc + '</td><td class="p-2">' + tx.category + '</td><td class="p-2">' + tx.subcategory + '</td><td class="p-2 nowrap" style="color:' + color + ';">' + sign + fmt(tx.amount) + ' ₽</td><td class="p-2 text-center"><button class="text-sm" style="color:var(--muted);cursor:pointer;background:none;border:none;" onclick="deleteTransaction(\'' + tx.id + '\')" title="Удалить">✕</button></td>';
+            tbody.appendChild(tr);
+        });
+        updateFacts(); updateFinancialData();
+    }
+    function renderTransactionsMobile() {
+        const tbody = document.getElementById('transactionsTableBodyMobile'); if (!tbody) return;
+        tbody.innerHTML = '';
+        if (appData.transactions.length === 0) { const emptyRow = document.createElement('tr'); emptyRow.innerHTML = '<td colspan="5" class="p-4 text-center text-muted text-sm">Транзакций пока нет</td>'; tbody.appendChild(emptyRow); }
+        appData.transactions.forEach(tx => {
+            const tr = document.createElement('tr'); tr.className = 'border-b'; tr.style.borderColor = 'var(--border)';
+            const sign = tx.type === 'income' ? '+' : '-'; const color = tx.type === 'income' ? '#34d399' : 'var(--primary-dark)';
+            tr.innerHTML = '<td class="p-2">' + tx.date + '</td><td class="p-2">' + tx.desc + '</td><td class="p-2">' + tx.category + '</td><td class="p-2 nowrap" style="color:' + color + ';">' + sign + fmt(tx.amount) + ' ₽</td><td class="p-2 text-center"><button class="text-sm" style="color:var(--muted);cursor:pointer;background:none;border:none;" onclick="deleteTransaction(\'' + tx.id + '\')" title="Удалить">✕</button></td>';
+            tbody.appendChild(tr);
+        });
+        updateFacts(); updateFinancialData();
+    }
+    window.deleteTransaction = function(id) { appData.transactions = appData.transactions.filter(t => t.id !== id); saveData(); renderTransactions(); renderTransactionsMobile(); };
+    function updateFacts() { for (const key in appData.budget) appData.budget[key].forEach(item => item.fact = 0); appData.transactions.forEach(tx => { const key = getBudgetKey(tx.category); if (key) { const item = appData.budget[key].find(i => i.sub === tx.subcategory); if (item) item.fact = (item.fact || 0) + tx.amount; } }); }
+    function updateFinancialData() { renderFinanceSummary(); renderFinanceCharts(); }
+    function renderFinanceSummary() {
+        const tbody = document.querySelector('#financeSummaryTable tbody');
+        if (tbody) { tbody.innerHTML = ''; const categories = ['Доход', 'Подписки', 'Регулярные платежи', 'Траты', 'Накопления', 'Долги']; categories.forEach(cat => { const key = getBudgetKey(cat); const budget = appData.budget[key] ? appData.budget[key].reduce((s, i) => s + i.amount, 0) : 0; const fact = appData.budget[key] ? appData.budget[key].reduce((s, i) => s + (i.fact || 0), 0) : 0; let diff, diffColor; if (cat === 'Доход') { diff = fact - budget; diffColor = diff >= 0 ? '#34d399' : 'var(--primary-dark)'; } else { diff = budget - fact; diffColor = diff >= 0 ? '#34d399' : 'var(--primary-dark)'; } const tr = document.createElement('tr'); tr.innerHTML = '<td class="p-2">' + cat + '</td><td class="p-2 nowrap">' + fmt(budget) + ' ₽</td><td class="p-2 nowrap">' + fmt(fact) + ' ₽</td><td class="p-2 nowrap" style="color:' + diffColor + ';">' + (diff >= 0 ? '+' : '') + fmt(diff) + ' ₽</td>'; tbody.appendChild(tr); }); }
+        const tbodyMobile = document.querySelector('#financeSummaryTableMobile tbody');
+        if (tbodyMobile) { tbodyMobile.innerHTML = ''; const categories = ['Доход', 'Подписки', 'Регулярные платежи', 'Траты', 'Накопления', 'Долги']; categories.forEach(cat => { const key = getBudgetKey(cat); const budget = appData.budget[key] ? appData.budget[key].reduce((s, i) => s + i.amount, 0) : 0; const fact = appData.budget[key] ? appData.budget[key].reduce((s, i) => s + (i.fact || 0), 0) : 0; const tr = document.createElement('tr'); tr.innerHTML = '<td class="p-2">' + cat + '</td><td class="p-2 nowrap">' + fmt(budget) + ' ₽</td><td class="p-2 nowrap">' + fmt(fact) + ' ₽</td>'; tbodyMobile.appendChild(tr); }); }
+    }
+    function renderFinanceCharts() {
+        const barCanvas = document.getElementById('budgetBarChart');
+        if (barCanvas) { const incomeBudget = appData.budget.income.reduce((s, i) => s + i.amount, 0); const expenseBudget = appData.budget.spending.reduce((s, i) => s + i.amount, 0) + appData.budget.subscriptions.reduce((s, i) => s + i.amount, 0) + appData.budget.regular.reduce((s, i) => s + i.amount, 0) + appData.budget.debts.reduce((s, i) => s + i.amount, 0); const incomeFact = appData.budget.income.reduce((s, i) => s + (i.fact || 0), 0); const expenseFact = appData.budget.spending.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.subscriptions.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.regular.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.debts.reduce((s, i) => s + (i.fact || 0), 0); if (charts.budgetBar) charts.budgetBar.destroy(); charts.budgetBar = new Chart(barCanvas.getContext('2d'), { type: 'bar', data: { labels: ['Доход', 'Расход'], datasets: [{ label: 'План', data: [incomeBudget, expenseBudget], backgroundColor: '#93C5FD' }, { label: 'Факт', data: [incomeFact, expenseFact], backgroundColor: '#FCA5A5' }] }, options: { plugins: { legend: { display: true, labels: { color: 'var(--muted)', font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } } }); }
+        const barCanvasMobile = document.getElementById('budgetBarChartMobile');
+        if (barCanvasMobile) { const incomeBudget = appData.budget.income.reduce((s, i) => s + i.amount, 0); const expenseBudget = appData.budget.spending.reduce((s, i) => s + i.amount, 0) + appData.budget.subscriptions.reduce((s, i) => s + i.amount, 0) + appData.budget.regular.reduce((s, i) => s + i.amount, 0) + appData.budget.debts.reduce((s, i) => s + i.amount, 0); const incomeFact = appData.budget.income.reduce((s, i) => s + (i.fact || 0), 0); const expenseFact = appData.budget.spending.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.subscriptions.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.regular.reduce((s, i) => s + (i.fact || 0), 0) + appData.budget.debts.reduce((s, i) => s + (i.fact || 0), 0); if (charts.budgetBarMobile) charts.budgetBarMobile.destroy(); charts.budgetBarMobile = new Chart(barCanvasMobile.getContext('2d'), { type: 'bar', data: { labels: ['Доход', 'Расход'], datasets: [{ label: 'План', data: [incomeBudget, expenseBudget], backgroundColor: '#93C5FD' }, { label: 'Факт', data: [incomeFact, expenseFact], backgroundColor: '#FCA5A5' }] }, options: { plugins: { legend: { display: true, labels: { color: 'var(--muted)', font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } } }); }
+        const legend = document.getElementById('expenseLegend');
+        if (legend) { legend.innerHTML = ''; const spendingItems = appData.budget.spending.filter(i => (i.fact || 0) > 0); spendingItems.forEach((item, idx) => { const row = document.createElement('div'); row.className = 'flex items-center justify-between text-sm py-1'; row.innerHTML = '<span><span class="habit-color-dot" style="background:' + SPENDING_COLORS[idx % SPENDING_COLORS.length] + ';"></span>' + item.sub + '</span><span class="font-bold nowrap">' + fmt(item.fact || 0) + ' ₽</span>'; legend.appendChild(row); }); if (spendingItems.length === 0) legend.innerHTML = '<div class="text-xs text-muted">Добавь транзакции, чтобы увидеть расходы</div>'; }
+    }
+    function addTransactionFromForm(date, desc, cat, sub, amount) {
+        if (!desc) { showToast('Введите описание'); return; }
+        if (!amount || amount <= 0) { showToast('Введите сумму больше нуля'); return; }
+        if (!sub) { showToast('Сначала добавь подкатегорию в бюджете'); return; }
+        const type = cat === 'Доход' ? 'income' : 'expense';
+        appData.transactions.push({ id: uid(), date, desc, category: cat, subcategory: sub, amount, type });
+        saveData(); renderTransactions(); renderTransactionsMobile(); showToast('Транзакция добавлена');
+    }
+    document.getElementById('addTransactionBtn').addEventListener('click', () => {
+        const date = document.getElementById('transactionDate').value; const desc = document.getElementById('transactionDesc').value.trim();
+        const cat = document.getElementById('transactionCategory').value; const sub = document.getElementById('transactionSubcategory').value;
+        const amount = parseFloat(document.getElementById('transactionAmount').value);
+        addTransactionFromForm(date, desc, cat, sub, amount);
+        document.getElementById('transactionDesc').value = ''; document.getElementById('transactionAmount').value = '';
+    });
+    document.getElementById('addTransactionBtnDesktop').addEventListener('click', () => {
+        const date = document.getElementById('transactionDateDesktop').value; const desc = document.getElementById('transactionDescDesktop').value.trim();
+        const cat = document.getElementById('transactionCategoryDesktop').value; const sub = document.getElementById('transactionSubcategoryDesktop').value;
+        const amount = parseFloat(document.getElementById('transactionAmountDesktop').value);
+        addTransactionFromForm(date, desc, cat, sub, amount);
+        document.getElementById('transactionDescDesktop').value = ''; document.getElementById('transactionAmountDesktop').value = '';
+    });
+
+    function renderAll() {
+        renderGoals(); renderHabitMatrix(); renderMobileHabits(); renderMonthly();
+        renderTasks(); renderMobileTasks(); renderBudget(); renderMobileBudget();
+        renderTransactions(); renderTransactionsMobile(); renderAllCharts(); updateFAB(); updateMobileSubtabs();
+    }
+    function renderAllCharts() { renderDonut(); renderFinanceCharts(); renderAnalytics(); }
+    window.addEventListener('resize', () => { applyDeviceMode(); updateFAB(); updateMobileSubtabs(); });
+
+    function init() {
+        applyDeviceMode(); applyTheme(); renderAll(); updateFAB(); updateMobileSubtabs();
+    }
+    init();
+})();
+</script>
+</body>
+</html>
+<!-- @six7_hub · t.me/six7_hub -->
