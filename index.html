@@ -687,7 +687,7 @@
             const daysContainer = document.createElement('div'); daysContainer.className = 'flex gap-1.5 mb-2 flex-wrap';
             dayNames.forEach((day, idx) => {
                 const btn = document.createElement('button'); btn.textContent = day; btn.type = 'button'; btn.className = 'mobile-day-btn' + (habit.activeDays[idx] ? ' active' : '');
-                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderAnalytics(); });
+                                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
                 daysContainer.appendChild(btn);
             });
             card.appendChild(daysContainer);
