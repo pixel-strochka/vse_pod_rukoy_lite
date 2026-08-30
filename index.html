@@ -862,7 +862,8 @@
         const filteredTasks = appData.tasks.filter(t => t.name.toLowerCase().includes(searchTerm)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
         if (filteredTasks.length === 0) { container.innerHTML = '<div class="text-center text-muted text-sm py-4">Задач пока нет. Нажмите "+" внизу</div>'; return; }
         filteredTasks.forEach(task => {
-            const card = document.createElement('div'); card.className = 'mobile-task-card' + (task.pinned ? ' pinned' : '');
+                        const card = document.createElement('div'); card.className = 'mobile-task-card' + (task.pinned ? ' pinned' : '');
+            if (task.expanded) card.classList.add('expanded');
             const topRow = document.createElement('div'); topRow.className = 'flex items-center gap-2';
             const check = document.createElement('input'); check.type = 'checkbox'; check.className = 'habit-checkbox'; check.style.width = '22px'; check.style.height = '22px'; check.checked = task.done;
             check.addEventListener('change', (e) => { e.stopPropagation(); task.done = e.target.checked; saveData(); renderTasks(); renderMobileTasks(); updateTaskKpis(); });
@@ -917,7 +918,7 @@
             const delBtn = document.createElement('button'); delBtn.textContent = '🗑️ Удалить'; delBtn.className = 'text-xs'; delBtn.style.color = 'var(--primary-dark)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
             delBtn.addEventListener('click', (e) => { e.stopPropagation(); appData.deletedTasks.push(task); appData.tasks = appData.tasks.filter(t => t.id !== task.id); saveData(); renderTasks(); renderMobileTasks(); renderTrash(); });
             details.appendChild(delBtn); card.appendChild(details);
-                        card.addEventListener('click', (e) => { if (e.target.closest('input, select, button')) return; card.classList.toggle('expanded'); });
+                                                card.addEventListener('click', (e) => { if (e.target.closest('input, select, button')) return; card.classList.toggle('expanded'); task.expanded = card.classList.contains('expanded'); saveData(); });
             container.appendChild(card);
         });
     }
