@@ -425,13 +425,17 @@
     const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
     let currentMonth = appData.currentMonth || getToday().slice(0, 7);
 
-    function loadData() {
+        function loadData() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const data = JSON.parse(saved);
                 data.habits.forEach(h => { if (!h.activeDays) h.activeDays = [true,true,true,true,true,true,true]; if (!h.monthlyDays) h.monthlyDays = {}; });
-                data.tasks.forEach(t => { if (!t.subtasks) t.subtasks = []; if (!t.pinned) t.pinned = false; });
+                data.tasks.forEach(t => { if (!t.subtasks) t.subtasks = []; if (!t.pinned) t.pinned = false; if (!t.expanded) t.expanded = false; });
+                if (!data.notes) data.notes = '';
+                if (!data.deletedTasks) data.deletedTasks = [];
+                if (!data.budget) data.budget = { income: [], subscriptions: [], regular: [], spending: [], savings: [], debts: [] };
+                if (!data.annualGoals) data.annualGoals = { finance: [], spirituality: [], career: [], health: [], relationships: [] };
                 return data;
             }
         } catch(e) {}
