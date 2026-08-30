@@ -656,7 +656,7 @@
             const daySelector = document.createElement('div'); daySelector.className = 'flex gap-1.5 mt-2 flex-wrap';
             dayNames.forEach((day, idx) => {
                 const btn = document.createElement('button'); btn.textContent = day; btn.type = 'button'; btn.className = 'day-selector-btn' + (habit.activeDays[idx] ? ' active' : '');
-                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
+                                btn.addEventListener('click', () => { habit.activeDays[idx] = !habit.activeDays[idx]; btn.classList.toggle('active', habit.activeDays[idx]); saveData(); renderHabitMatrix(); renderMobileHabits(); renderAnalytics(); });
                 daySelector.appendChild(btn);
             });
             tdName.appendChild(daySelector); tr.appendChild(tdName);
@@ -892,7 +892,7 @@
             priorityRow.appendChild(prioritySelect); details.appendChild(priorityRow);
             const pinRow = document.createElement('div'); pinRow.className = 'mb-2';
             const pinBtn = document.createElement('button'); pinBtn.textContent = task.pinned ? '📌 Открепить' : '📍 Закрепить'; pinBtn.className = 'text-xs'; pinBtn.style.color = 'var(--secondary-dark)'; pinBtn.style.cursor = 'pointer'; pinBtn.style.background = 'none'; pinBtn.style.border = 'none';
-            pinBtn.addEventListener('click', (e) => { e.stopPropagation(); task.pinned = !task.pinned; saveData(); renderTasks(); renderMobileTasks(); });
+                        pinBtn.addEventListener('click', (e) => { e.stopPropagation(); task.pinned = !task.pinned; task.expanded = true; saveData(); renderTasks(); renderMobileTasks(); });
             pinRow.appendChild(pinBtn); details.appendChild(pinRow);
             if (!task.subtasks) task.subtasks = [];
             const subtasksContainer = document.createElement('div'); subtasksContainer.className = 'mb-2';
@@ -908,16 +908,16 @@
                 subInput.addEventListener('input', (e) => { sub.name = e.target.value; saveData(); renderTasks(); });
                 subRow.appendChild(subInput);
                 const subDel = document.createElement('button'); subDel.textContent = '✕'; subDel.className = 'text-xs'; subDel.style.color = 'var(--muted)'; subDel.style.cursor = 'pointer'; subDel.style.background = 'none'; subDel.style.border = 'none';
-                subDel.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks = task.subtasks.filter(s => s.id !== sub.id); saveData(); renderTasks(); renderMobileTasks(); });
+                                                subDel.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks = task.subtasks.filter(s => s.id !== sub.id); task.expanded = true; saveData(); renderTasks(); renderMobileTasks(); });
                 subRow.appendChild(subDel); subtasksContainer.appendChild(subRow);
             });
             const addSubBtn = document.createElement('button'); addSubBtn.textContent = '+ Подзадача'; addSubBtn.className = 'text-xs'; addSubBtn.style.color = 'var(--secondary-dark)'; addSubBtn.style.cursor = 'pointer'; addSubBtn.style.background = 'none'; addSubBtn.style.border = 'none';
-            addSubBtn.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks.push({ id: uid(), name: 'Новая подзадача', done: false }); saveData(); renderTasks(); renderMobileTasks(); });
+                        addSubBtn.addEventListener('click', (e) => { e.stopPropagation(); task.subtasks.push({ id: uid(), name: 'Новая подзадача', done: false }); task.expanded = true; saveData(); renderTasks(); renderMobileTasks(); });
             subtasksContainer.appendChild(addSubBtn); details.appendChild(subtasksContainer);
             const delBtn = document.createElement('button'); delBtn.textContent = '🗑️ Удалить'; delBtn.className = 'text-xs'; delBtn.style.color = 'var(--primary-dark)'; delBtn.style.cursor = 'pointer'; delBtn.style.background = 'none'; delBtn.style.border = 'none';
             delBtn.addEventListener('click', (e) => { e.stopPropagation(); appData.deletedTasks.push(task); appData.tasks = appData.tasks.filter(t => t.id !== task.id); saveData(); renderTasks(); renderMobileTasks(); renderTrash(); });
             details.appendChild(delBtn); card.appendChild(details);
-            card.addEventListener('click', (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return; card.classList.toggle('expanded'); });
+                        card.addEventListener('click', (e) => { if (e.target.closest('input, select, button')) return; card.classList.toggle('expanded'); });
             container.appendChild(card);
         });
     }
