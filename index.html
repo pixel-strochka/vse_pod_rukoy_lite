@@ -496,7 +496,10 @@
     document.getElementById('tgButton').addEventListener('click', () => window.open(TG_LINK, '_blank'));
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-    document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.mobileTab)));
+        document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        switchTab(btn.dataset.mobileTab);
+    }));
     function switchTab(tabId) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const desktopBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
@@ -510,7 +513,7 @@
         setTimeout(renderAllCharts, 100);
     }
 
-    function updateMobileSubtabs() {
+        function updateMobileSubtabs() {
         if (!isMobile()) return;
         const activeTab = document.querySelector('.tab-panel:not(.hidden)'); if (!activeTab) return;
         const tabId = activeTab.id;
@@ -518,8 +521,7 @@
         const financeSubtabs = document.getElementById('mobileFinanceSubtabs');
         if (habitSubtabs) habitSubtabs.style.display = tabId === 'tab1' ? 'flex' : 'none';
         if (financeSubtabs) financeSubtabs.style.display = tabId === 'tab3' ? 'flex' : 'none';
-        if (tabId === 'tab1') showMobileSubtab('habits-goals');
-        else if (tabId === 'tab3') showMobileSubtab('finance-budget');
+        // Сброс подвкладок убран
     }
     function showMobileSubtab(subtabId) {
         const tabMap = {
@@ -539,7 +541,10 @@
         document.querySelectorAll(map.subtabs + ' .mobile-subtab').forEach(btn => btn.classList.toggle('active', btn.dataset.mobileSubtab === subtabId));
         updateFAB();
     }
-    document.querySelectorAll('.mobile-subtab').forEach(btn => btn.addEventListener('click', () => showMobileSubtab(btn.dataset.mobileSubtab)));
+        document.querySelectorAll('.mobile-subtab').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showMobileSubtab(btn.dataset.mobileSubtab);
+    }));
 
     function updateFAB() {
         const fab = document.getElementById('fabBtn'); if (!fab) return;
