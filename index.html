@@ -61,7 +61,9 @@
         .inline-input:hover { border-color: var(--muted); }
         .inline-input:focus { outline: none; border-color: var(--secondary); }
         .inline-input::placeholder { color: var(--muted); }
-        [data-mode="dark"] .inline-input { background: rgba(255,255,255,0.05); border-color: var(--border); color: #fff; }
+                [data-mode="dark"] .inline-input { background: rgba(255,255,255,0.05); border-color: var(--border); color: #fff; }
+        [data-mode="dark"] select.inline-input { color: #fff; }
+        [data-mode="dark"] select.inline-input option { background: #1e293b; color: #fff; }
         [data-mode="dark"] .inline-input::placeholder { color: #94a3b8; }
         .habit-checkbox { appearance: none; width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.2s; background: var(--card); position: relative; flex-shrink: 0; }
         .habit-checkbox:checked { background: var(--primary); border-color: var(--primary-dark); }
